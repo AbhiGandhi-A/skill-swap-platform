@@ -156,9 +156,6 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Add this after all existing routes
-
-// Get dashboard stats for logged-in user
 // Get dashboard stats for logged-in user
 router.get('/stats', authenticate, async (req, res) => {
   try {
