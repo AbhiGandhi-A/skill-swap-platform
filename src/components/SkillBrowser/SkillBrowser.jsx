@@ -30,10 +30,13 @@ const SkillBrowser = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users);
-        setTotalPages(data.totalPages);
-      }
+  const data = await response.json();
+  // Filter out admins just in case
+  const filteredUsers = data.users.filter(user => user.role !== 'admin');
+  setUsers(filteredUsers);
+  setTotalPages(data.totalPages);
+}
+
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {

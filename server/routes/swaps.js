@@ -156,4 +156,43 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
+// Add this after all existing routes
+
+// Get dashboard stats for logged-in user
+// Get dashboard stats for logged-in user
+router.get('/stats', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const totalSwaps = await SwapRequest.countDocuments({
+      $or: [{ requester: userId }, { recipient: userId }]
+    });
+
+    const completedSwaps = await SwapRequest.countDocuments({
+      $or: [{ requester: userId }, { recipient: userId }],
+      status: 'completed'
+    });
+
+    const pendingRequests = await SwapRequest.countDocuments({
+      recipient: userId,
+      status: 'pending'
+    });
+
+    const user = await User.findById(userId).select('rating');
+
+    res.json({
+      totalSwaps,
+      completedSwaps,
+      pendingRequests,
+      averageRating: user?.rating?.average || 0,
+      ratingCount: user?.rating?.count || 0
+    });
+  } catch (error) {
+    console.error('❌ Failed to fetch dashboard stats:', error);
+    res.status(500).json({ message: 'Failed to fetch dashboard stats' });
+  }
+});
+
+
+
 module.exports = router;

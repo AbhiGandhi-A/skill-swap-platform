@@ -3,7 +3,7 @@ const User = require('../models/User');
 const { authenticate, authorize } = require('../middleware/auth');
 const router = express.Router();
 
-// ✅ Admin: Get all users — MUST COME BEFORE `/:id`
+// Admin: Get all users — MUST COME BEFORE `/:id`
 router.get('/admin/all', authenticate, authorize(['admin']), async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
@@ -26,7 +26,7 @@ router.get('/admin/all', authenticate, authorize(['admin']), async (req, res) =>
   }
 });
 
-// ✅ Admin: Toggle user status
+// Admin: Toggle user status
 router.patch('/admin/:id/toggle-status', authenticate, authorize(['admin']), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -43,11 +43,15 @@ router.patch('/admin/:id/toggle-status', authenticate, authorize(['admin']), asy
   }
 });
 
-// 🔍 Get all users (public profiles only for regular users)
+// Get all users (public profiles only for regular users)
 router.get('/', authenticate, async (req, res) => {
   try {
     const { search, skill, page = 1, limit = 10 } = req.query;
-    const query = { isActive: true };
+    const query = { 
+  isActive: true,
+  role: { $ne: 'admin' }   // Exclude admin users from public search
+};
+
 
     if (req.user.role !== 'admin') {
       query.isPublic = true;
@@ -86,7 +90,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// ✏️ Update user profile
+//  Update user profile
 router.put('/profile', authenticate, async (req, res) => {
   try {
     const updates = req.body;
@@ -111,7 +115,7 @@ router.put('/profile', authenticate, async (req, res) => {
   }
 });
 
-// 👤 Get user profile (MUST COME LAST to avoid route conflict)
+//  Get user profile (MUST COME LAST to avoid route conflict)
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-email');

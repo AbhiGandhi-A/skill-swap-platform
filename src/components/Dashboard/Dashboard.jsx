@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Star, Users, MessageSquare, Calendar, Award, TrendingUp, CheckCircle } from 'lucide-react';
+import {
+  Star,
+  Users,
+  MessageSquare,
+  Calendar,
+  Award,
+  TrendingUp,
+  CheckCircle
+} from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -8,19 +17,34 @@ const Dashboard = () => {
     totalSwaps: 0,
     completedSwaps: 0,
     pendingRequests: 0,
-    averageRating: 0
+    averageRating: 0,
+    ratingCount: 0
   });
 
-  // Mock stats for demo - in real app, fetch from API
+
   useEffect(() => {
-    // Simulate API call
-    setStats({
-      totalSwaps: 12,
-      completedSwaps: 8,
-      pendingRequests: 3,
-      averageRating: user?.rating?.average || 0
-    });
-  }, [user]);
+  let interval;
+  if (user?._id && user?.token) {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get('/api/swap-requests/stats', {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        setStats(response.data);
+      } catch (err) {
+        console.error('Error fetching dashboard stats:', err.response?.data || err.message);
+      }
+    };
+
+    fetchStats(); // initial load
+
+    interval = setInterval(fetchStats, 10000); // refresh every 10 seconds
+  }
+
+  return () => clearInterval(interval);
+}, [user]);
+
+
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -102,12 +126,15 @@ const Dashboard = () => {
               <Star className="w-8 h-8 text-yellow-600" />
             </div>
             <p className="text-3xl font-bold text-gray-900">
-              {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : 'N/A'}
+              {stats.ratingCount > 0 ? `${stats.averageRating.toFixed(1)} ★` : 'NA'}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {user?.rating?.count ? `${user.rating.count} reviews` : 'No reviews yet'}
+              {stats.ratingCount > 0
+                ? `${stats.ratingCount} rating${stats.ratingCount > 1 ? 's' : ''}`
+                : 'No ratings yet'}
             </p>
           </div>
+
         </div>
 
         {/* Skills Overview */}
@@ -123,7 +150,7 @@ const Dashboard = () => {
                 {user?.skillsOffered?.length || 0} skills
               </span>
             </div>
-            
+
             {user?.skillsOffered && user.skillsOffered.length > 0 ? (
               <div className="space-y-3">
                 {user.skillsOffered.slice(0, 5).map((skill, index) => (
@@ -165,7 +192,7 @@ const Dashboard = () => {
                 {user?.skillsWanted?.length || 0} skills
               </span>
             </div>
-            
+
             {user?.skillsWanted && user.skillsWanted.length > 0 ? (
               <div className="space-y-3">
                 {user.skillsWanted.slice(0, 5).map((skill, index) => (
@@ -208,7 +235,7 @@ const Dashboard = () => {
               </p>
               <p className="text-xs text-gray-500">Find people to learn from</p>
             </button>
-            
+
             <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all group">
               <MessageSquare className="w-8 h-8 text-gray-400 group-hover:text-green-600 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600 group-hover:text-green-700">
@@ -216,7 +243,7 @@ const Dashboard = () => {
               </p>
               <p className="text-xs text-gray-500">Check your swap requests</p>
             </button>
-            
+
             <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group">
               <Award className="w-8 h-8 text-gray-400 group-hover:text-purple-600 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600 group-hover:text-purple-700">
